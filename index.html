@@ -140,7 +140,7 @@ function serieDelQR(){
 function consultar(serie){
   return new Promise((ok, fail) => {
     const cb = 'gexsa_' + Date.now();
-    const t  = setTimeout(() => { limpiar(); fail(new Error('timeout')); }, 20000);
+    const t  = setTimeout(() => { limpiar(); fail(new Error('timeout')); }, 45000);
     function limpiar(){ clearTimeout(t); delete window[cb]; if(s.parentNode) s.remove(); }
     window[cb] = d => { limpiar(); ok(d); };
     const s = document.createElement('script');
@@ -215,7 +215,7 @@ function error(msg){
     if (d && d.ok) pintar(d);
     else error(d && d.error ? d.error : 'No se encontró información para la serie ' + serie + '.');
   }catch(e){
-    error('No se pudo conectar con el sistema. Revisa tu conexión e inténtalo de nuevo.');
+    error('No se pudo conectar con el sistema. Espera unos segundos y vuelve a cargar la página.');
   }
 })();
 </script>
