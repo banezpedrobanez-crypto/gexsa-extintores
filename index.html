@@ -164,6 +164,55 @@ function boton(ico, texto, url, motivo){
        + (motivo ? '<div class="nota">'+esc(motivo)+'</div>' : '');
 }
 
+/* El boton de la tarjeta no salta directo: primero le pide al sistema
+   que deje la serie puesta en la hoja, y recien despues la abre. */
+function botonTarjeta(d){
+  return '<button class="btn" type="button" id="btnTarjeta">'
+       + ICO['card'] + '<span class="tx">TARJETA DE INSPECCIÓN</span>'
+       + '<span class="ch">&#8250;</span></button>'
+       + '<div class="nota" id="notaTarjeta"></div>';
+}
+
+function prepararTarjeta(d){
+  const b = document.getElementById('btnTarjeta');
+  const n = document.getElementById('notaTarjeta');
+  if (!b) return;
+
+  b.addEventListener('click', function(){
+
+    b.disabled = true;
+    b.classList.add('off');
+    b.querySelector('.tx').textContent = 'PREPARANDO LA TARJETA...';
+    n.textContent = 'Un momento, se está cargando el extintor en la tarjeta.';
+
+    const cb = 'gexsaT_' + Date.now();
+    const s  = document.createElement('script');
+
+    const listo = function(res){
+      delete window[cb];
+      if (s.parentNode) s.remove();
+
+      if (res && res.ok && res.urlHoja){
+        window.location.href = res.urlHoja;
+        return;
+      }
+
+      b.disabled = false;
+      b.classList.remove('off');
+      b.querySelector('.tx').textContent = 'TARJETA DE INSPECCIÓN';
+      n.textContent = 'No se pudo preparar la tarjeta. Vuelve a intentarlo.';
+    };
+
+    window[cb] = listo;
+    setTimeout(function(){ if (window[cb]) listo(null); }, 45000);
+
+    s.src = API_URL + '?accion=tarjeta&serie=' + encodeURIComponent(d.serie)
+          + '&callback=' + cb;
+    s.onerror = function(){ listo(null); };
+    document.body.appendChild(s);
+  });
+}
+
 function pintar(d){
   const titulo = d.numeroExtintor ? 'Extintor N.º ' + esc(d.numeroExtintor) : 'Extintor';
 
@@ -180,7 +229,9 @@ function pintar(d){
           'El certificado de operatividad de este extintor todavía no está disponible.')
   + boton('pdf','CERTIFICADO DE PRUEBA HIDROSTÁTICA',  d.pdfHidrostatica,
           'Este extintor todavía no cuenta con Certificado de Prueba Hidrostática.')
-  + boton('card','TARJETA DE INSPECCIÓN',              d.urlTarjeta, '');
+  + botonTarjeta(d);
+
+  prepararTarjeta(d);
 
   document.title = titulo + ' — GEXSA SOLUTIONS';
 }
