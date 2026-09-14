@@ -164,54 +164,16 @@ function boton(ico, texto, url, motivo){
        + (motivo ? '<div class="nota">'+esc(motivo)+'</div>' : '');
 }
 
-/* El boton de la tarjeta no salta directo: primero le pide al sistema
-   que deje la serie puesta en la hoja, y recien despues la abre. */
+/* El boton de la tarjeta abre la tarjeta web, que funciona en
+   cualquier celular sin instalar nada. */
 function botonTarjeta(d){
-  return '<button class="btn" type="button" id="btnTarjeta">'
+  var url = 'tarjeta.html?serie=' + encodeURIComponent(d.serie);
+  return '<a class="btn" href="'+esc(url)+'">'
        + ICO['card'] + '<span class="tx">TARJETA DE INSPECCIÓN</span>'
-       + '<span class="ch">&#8250;</span></button>'
-       + '<div class="nota" id="notaTarjeta"></div>';
+       + '<span class="ch">&#8250;</span></a>';
 }
 
-function prepararTarjeta(d){
-  const b = document.getElementById('btnTarjeta');
-  const n = document.getElementById('notaTarjeta');
-  if (!b) return;
-
-  b.addEventListener('click', function(){
-
-    b.disabled = true;
-    b.classList.add('off');
-    b.querySelector('.tx').textContent = 'PREPARANDO LA TARJETA...';
-    n.textContent = 'Un momento, se está cargando el extintor en la tarjeta.';
-
-    const cb = 'gexsaT_' + Date.now();
-    const s  = document.createElement('script');
-
-    const listo = function(res){
-      delete window[cb];
-      if (s.parentNode) s.remove();
-
-      if (res && res.ok && res.urlHoja){
-        window.location.href = res.urlHoja;
-        return;
-      }
-
-      b.disabled = false;
-      b.classList.remove('off');
-      b.querySelector('.tx').textContent = 'TARJETA DE INSPECCIÓN';
-      n.textContent = 'No se pudo preparar la tarjeta. Vuelve a intentarlo.';
-    };
-
-    window[cb] = listo;
-    setTimeout(function(){ if (window[cb]) listo(null); }, 45000);
-
-    s.src = API_URL + '?accion=tarjeta&serie=' + encodeURIComponent(d.serie)
-          + '&callback=' + cb;
-    s.onerror = function(){ listo(null); };
-    document.body.appendChild(s);
-  });
-}
+function prepararTarjeta(d){ /* ya no hace falta preparar nada */ }
 
 function pintar(d){
   const titulo = d.numeroExtintor ? 'Extintor N.º ' + esc(d.numeroExtintor) : 'Extintor';
@@ -219,7 +181,7 @@ function pintar(d){
   document.getElementById('app').innerHTML =
     '<h1>'+titulo+'</h1>'
   + '<div class="datos">'
-  +   campo('N.º de serie',  d.serie)
+  +   campo('N.º de serie',  d.serieCorta || d.serie)
   +   campo('Cliente',       d.cliente)
   +   campo('Capacidad',     d.capacidad)
   +   campo('Agente / Clase',d.agenteClase)
