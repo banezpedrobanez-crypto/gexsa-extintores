@@ -176,7 +176,11 @@ function botonTarjeta(d){
 function prepararTarjeta(d){ /* ya no hace falta preparar nada */ }
 
 function pintar(d){
-  const titulo = d.numeroExtintor ? 'Extintor N.º ' + esc(d.numeroExtintor) : 'Extintor';
+  /* El N.º sale del mismo QR: lo que va antes de la barra
+     ("12/001619" -> 12). Asi coincide siempre con el sticker. */
+  const qr = serieDelQR();
+  const num = qr.indexOf('/') > 0 ? qr.split('/')[0].trim() : '';
+  const titulo = num ? 'Extintor N.º ' + esc(num) : 'Extintor';
 
   document.getElementById('app').innerHTML =
     '<h1>'+titulo+'</h1>'
