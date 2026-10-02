@@ -131,17 +131,47 @@ function serieDelQR(){
 /* ------------------------------------------------------------------
    Consulta al Apps Script (JSONP: evita bloqueos de CORS)
 ------------------------------------------------------------------ */
-function consultar(serie){
+function consultar(serie, espera){
   return new Promise((ok, fail) => {
-    const cb = 'gexsa_' + Date.now();
-    const t  = setTimeout(() => { limpiar(); fail(new Error('timeout')); }, 45000);
-    function limpiar(){ clearTimeout(t); delete window[cb]; if(s.parentNode) s.remove(); }
+    const cb = 'gexsa_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+    const t  = setTimeout(() => { limpiar(); fail(new Error('timeout')); }, espera || 30000);
+    function limpiar(){ clearTimeout(t); window[cb] = function(){}; if(s.parentNode) s.remove(); }
     window[cb] = d => { limpiar(); ok(d); };
     const s = document.createElement('script');
     s.src = API_URL + '?serie=' + encodeURIComponent(serie) + '&callback=' + cb;
     s.onerror = () => { limpiar(); fail(new Error('red')); };
     document.body.appendChild(s);
   });
+}
+
+/* Si la conexion falla o tarda demasiado, se vuelve a intentar sola
+   (hasta 3 veces) antes de mostrar el error. Asi el cliente casi nunca
+   tiene que recargar la pagina a mano. */
+async function consultarConReintentos(serie, alReintentar){
+  const esperas = [30000, 30000, 40000];
+  let ultimo;
+  for (let i = 0; i < esperas.length; i++){
+    try { return await consultar(serie, esperas[i]); }
+    catch(e){ ultimo = e; if (i < esperas.length - 1 && alReintentar) alReintentar(i + 1); }
+  }
+  throw ultimo;
+}
+
+/* Memoria del celular: si este QR ya se abrio antes en este telefono,
+   la ficha aparece al instante y luego se actualiza sola. */
+function leerMemoria(serie){
+  try { const v = localStorage.getItem('gexsa_ficha_' + serie); return v ? JSON.parse(v) : null; }
+  catch(e){ return null; }
+}
+function guardarMemoria(serie, d){
+  try { localStorage.setItem('gexsa_ficha_' + serie, JSON.stringify(d)); } catch(e){}
+}
+
+/* El N.º sale del mismo QR: lo que va antes de la barra
+   ("12/001619" -> 12). Asi coincide siempre con el sticker. */
+function numeroDelQR(){
+  const qr = serieDelQR();
+  return qr.indexOf('/') > 0 ? qr.split('/')[0].trim() : '';
 }
 
 /* ------------------------------------------------------------------
@@ -176,10 +206,7 @@ function botonTarjeta(d){
 function prepararTarjeta(d){ /* ya no hace falta preparar nada */ }
 
 function pintar(d){
-  /* El N.º sale del mismo QR: lo que va antes de la barra
-     ("12/001619" -> 12). Asi coincide siempre con el sticker. */
-  const qr = serieDelQR();
-  const num = qr.indexOf('/') > 0 ? qr.split('/')[0].trim() : '';
+  const num = numeroDelQR();
   const titulo = num ? 'Extintor N.º ' + esc(num) : 'Extintor';
 
   document.getElementById('app').innerHTML =
@@ -221,12 +248,26 @@ function error(msg){
     return;
   }
 
+  /* Mientras llega la informacion ya se muestra el numero del extintor */
+  const num = numeroDelQR();
+  function estado(msg){
+    document.getElementById('app').innerHTML =
+      (num ? '<h1>Extintor N.º ' + esc(num) + '</h1>' : '')
+      + '<div class="estado"><div class="spin"></div>' + esc(msg) + '</div>';
+  }
+
+  const guardada = leerMemoria(serie);
+  if (guardada) pintar(guardada);
+  else estado('Cargando los datos del extintor...');
+
   try{
-    const d = await consultar(serie);
-    if (d && d.ok) pintar(d);
-    else error(d && d.error ? d.error : 'No se encontró información para la serie ' + serie + '.');
+    const d = await consultarConReintentos(serie, function(n){
+      if (!guardada) estado('La conexión está lenta, seguimos intentando (' + (n + 1) + ' de 3)...');
+    });
+    if (d && d.ok){ guardarMemoria(serie, d); pintar(d); }
+    else if (!guardada) error(d && d.error ? d.error : 'No se encontró información para la serie ' + serie + '.');
   }catch(e){
-    error('No se pudo conectar con el sistema. Espera unos segundos y vuelve a cargar la página.');
+    if (!guardada) error('No se pudo conectar con el sistema. Revisa tu señal de internet y vuelve a cargar la página.');
   }
 })();
 </script>
