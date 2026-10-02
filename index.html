@@ -148,7 +148,10 @@ function consultar(serie, espera){
    (hasta 3 veces) antes de mostrar el error. Asi el cliente casi nunca
    tiene que recargar la pagina a mano. */
 async function consultarConReintentos(serie, alReintentar){
-  const esperas = [30000, 30000, 40000];
+  /* El primer intento espera poco: la API ya responde en 1-6 s. Si se
+     tarda mas, casi siempre es la señal o Google que se trabo, y un
+     segundo pedido sale al toque. */
+  const esperas = [12000, 20000, 40000];
   let ultimo;
   for (let i = 0; i < esperas.length; i++){
     try { return await consultar(serie, esperas[i]); }
