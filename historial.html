@@ -74,11 +74,19 @@ document.getElementById('volver').onclick = function(e){
   if (document.referrer && history.length > 1) { e.preventDefault(); history.back(); }
 };
 
+/* Solo UNO: el N.º de extintor; si no hay, la serie corta (000269). */
+function serieCorta(s){
+  var t = String(s || '');
+  if (t.indexOf('/') >= 0) t = t.substring(t.lastIndexOf('/') + 1);
+  t = t.replace(/\D/g, '');
+  if (!t) return String(s || '');
+  if (t.length > 6) t = t.slice(-6);
+  while (t.length < 6) t = '0' + t;
+  return t;
+}
 function subtitulo(numero, serie){
-  var t = [];
-  if (numero) t.push('Extintor N.º ' + numero);
-  if (serie)  t.push('Serie ' + serie);
-  document.getElementById('sub').textContent = t.join(' · ');
+  var txt = numero ? 'Extintor N.º ' + numero : (serie ? 'Serie ' + serieCorta(serie) : '');
+  document.getElementById('sub').textContent = txt;
 }
 subtitulo(NUMERO, SERIE);
 
