@@ -32,15 +32,14 @@
   .sub{text-align:center;color:var(--gris);font-size:14px;margin-bottom:18px}
   .tl{position:relative;padding-left:34px}
   .tl:before{content:"";position:absolute;left:11px;top:6px;bottom:6px;width:2px;background:var(--linea)}
-  .it{position:relative;border:1px solid #e3ebf5;border-radius:12px;padding:11px 13px;margin-bottom:12px;background:#fff;
-      box-shadow:0 1px 4px rgba(18,56,110,.06)}
-  .it:before{content:"";position:absolute;left:-30px;top:16px;width:14px;height:14px;border-radius:50%;
+  /* Linea de tiempo: una bolita por cada cosa que se hizo (sin cajas) */
+  .it{position:relative;padding:2px 0 16px}
+  .it:before{content:"";position:absolute;left:-30px;top:3px;width:14px;height:14px;border-radius:50%;
       background:var(--azul);border:3px solid #fff;box-shadow:0 0 0 2px var(--azul)}
-  .it.baja{background:#fdeced;border-color:#f6c9cb}
   .it.baja:before{background:var(--rojo);box-shadow:0 0 0 2px var(--rojo)}
   .fila{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-  .f{font-size:13px;font-weight:700;color:#32465f}
-  .a{font-size:17px;font-weight:800;line-height:1.25;margin-top:1px}
+  .f{font-size:12.5px;font-weight:700;color:#5b6b80}
+  .a{font-size:16px;font-weight:800;line-height:1.25;margin-top:1px}
   .it.baja .a{color:var(--rojo)}
   .d{font-size:14px;color:#4b5d75;margin-top:3px}
   /* Lo que se hizo: una bolita por cada cosa */
@@ -104,11 +103,9 @@ function claseEstado(e){
   return 'p-otro';
 }
 
-/* "Recarga realizada, Cambio de manómetro" -> una bolita por cada cosa */
-function listaDetalle(t){
-  var partes = String(t || '').split(/\s*[,;\n]\s*/).filter(function(x){ return x; });
-  if (!partes.length) return '';
-  return '<ul class="det">' + partes.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>';
+/* "Recarga realizada, Cambio de manómetro" -> ["Recarga realizada","Cambio de manómetro"] */
+function partesDetalle(t){
+  return String(t || '').split(/\s*[,;\n]\s*/).filter(function(x){ return x; });
 }
 
 function pintar(d){
@@ -121,13 +118,17 @@ function pintar(d){
   var h = '<div class="tl">';
   d.items.forEach(function(it){
     var baja = String(it.estado).toUpperCase() === 'BAJA' || /BAJA/i.test(it.atencion);
+    /* 1) La atencion (con su estado) */
     h += '<div class="it' + (baja ? ' baja' : '') + '"><div class="fila"><div>'
        +   '<div class="f">' + esc(it.fecha) + '</div>'
        +   '<div class="a">' + esc(it.atencion) + '</div>'
-       +   listaDetalle(it.detalle)
        + '</div>'
        + (it.estado ? '<span class="pill ' + claseEstado(it.estado) + '">' + esc(it.estado) + '</span>' : '')
        + '</div></div>';
+    /* 2) Cada cosa que se hizo, con su propia bolita */
+    partesDetalle(it.detalle).forEach(function(x){
+      h += '<div class="it"><div class="f">' + esc(it.fecha) + '</div><div class="a">' + esc(x) + '</div></div>';
+    });
   });
   document.getElementById('app').innerHTML = h + '</div>';
 }
