@@ -43,6 +43,12 @@
   .a{font-size:17px;font-weight:800;line-height:1.25;margin-top:1px}
   .it.baja .a{color:var(--rojo)}
   .d{font-size:14px;color:#4b5d75;margin-top:3px}
+  /* Lo que se hizo: una bolita por cada cosa */
+  .det{list-style:none;margin:8px 0 0;padding:0}
+  .det li{position:relative;padding:3px 0 3px 20px;font-size:14px;color:#4b5d75;line-height:1.35}
+  .det li:before{content:"";position:absolute;left:2px;top:8px;width:8px;height:8px;border-radius:50%;
+      background:#fff;border:2px solid var(--azul)}
+  .det li:not(:last-child):after{content:"";position:absolute;left:7px;top:20px;bottom:-8px;width:2px;background:var(--linea)}
   .pill{flex:0 0 auto;font-size:11.5px;font-weight:800;border-radius:6px;padding:4px 10px;white-space:nowrap}
   .p-ok{background:#ddf5e6;color:#1c7c4a}
   .p-obs{background:#fdf0c4;color:#8a6200}
@@ -94,8 +100,15 @@ function claseEstado(e){
   var k = String(e||'').toUpperCase();
   if (k === 'BAJA') return 'p-baja';
   if (k === 'OBSERVADO') return 'p-obs';
-  if (k === 'REALIZADO' || k === 'CONFORME') return 'p-ok';
+  if (k === 'REALIZADO' || k === 'CONFORME' || k === 'OPERATIVO') return 'p-ok';
   return 'p-otro';
+}
+
+/* "Recarga realizada, Cambio de manómetro" -> una bolita por cada cosa */
+function listaDetalle(t){
+  var partes = String(t || '').split(/\s*[,;\n]\s*/).filter(function(x){ return x; });
+  if (!partes.length) return '';
+  return '<ul class="det">' + partes.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>';
 }
 
 function pintar(d){
@@ -111,7 +124,7 @@ function pintar(d){
     h += '<div class="it' + (baja ? ' baja' : '') + '"><div class="fila"><div>'
        +   '<div class="f">' + esc(it.fecha) + '</div>'
        +   '<div class="a">' + esc(it.atencion) + '</div>'
-       +   (it.detalle ? '<div class="d">' + esc(it.detalle) + '</div>' : '')
+       +   listaDetalle(it.detalle)
        + '</div>'
        + (it.estado ? '<span class="pill ' + claseEstado(it.estado) + '">' + esc(it.estado) + '</span>' : '')
        + '</div></div>';
