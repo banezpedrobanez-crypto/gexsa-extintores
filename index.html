@@ -166,11 +166,11 @@ async function consultarConReintentos(serie, alReintentar){
 /* Memoria del celular: si este QR ya se abrio antes en este telefono,
    la ficha aparece al instante y luego se actualiza sola. */
 function leerMemoria(serie){
-  try { const v = localStorage.getItem('gexsa_ficha_' + serie); return v ? JSON.parse(v) : null; }
+  try { const v = localStorage.getItem('gexsa_ficha2_' + serie); return v ? JSON.parse(v) : null; }
   catch(e){ return null; }
 }
 function guardarMemoria(serie, d){
-  try { localStorage.setItem('gexsa_ficha_' + serie, JSON.stringify(d)); } catch(e){}
+  try { localStorage.setItem('gexsa_ficha2_' + serie, JSON.stringify(d)); } catch(e){}
 }
 
 /* El N.º sale del mismo QR: lo que va antes de la barra
@@ -282,7 +282,11 @@ function error(msg){
       if (!guardada) estado('La conexión está lenta, seguimos intentando (' + (n + 1) + ' de 3)...');
     });
     if (d && d.ok){ guardarMemoria(serie, d); pintar(d); }
-    else if (!guardada) error(d && d.error ? d.error : 'No se encontró información para la serie ' + serie + '.');
+    else {
+      /* El sistema respondio que no hay datos: no se muestra lo guardado viejo */
+      try { localStorage.removeItem('gexsa_ficha2_' + serie); } catch(e2){}
+      error(d && d.error ? d.error : 'No se encontró información para la serie ' + serie + '.');
+    }
   }catch(e){
     if (!guardada) error('No se pudo conectar con el sistema. Revisa tu señal de internet y vuelve a cargar la página.');
   }

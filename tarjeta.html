@@ -150,6 +150,11 @@ function fila4(e1, v1, e2, v2){
 /* Una linea de la tabla de inspecciones */
 function filaInspeccion(f, catalogo){
   let ops = '<option value=""></option>';
+  /* Si la observacion guardada ya no esta igual en el catalogo, se
+     agrega igual: asi no se borra sola al guardar el inspector. */
+  if (f.observacion && catalogo.indexOf(f.observacion) < 0) {
+    ops += '<option value="'+esc(f.observacion)+'" selected>'+esc(f.observacion)+'</option>';
+  }
   catalogo.forEach(o => {
     ops += '<option value="'+esc(o)+'"'
         + (o === f.observacion ? ' selected' : '') + '>'+esc(o)+'</option>';
@@ -300,10 +305,14 @@ function conectar(caja, serie){
     }
 
     yendo = false;
+
+    /* Si cambiaron algo mientras se guardaba, se guarda eso tambien */
+    if ((insp.value + '||' + obs.value) !== ahora) guardar();
   }
 
   insp.addEventListener('blur',   guardar);
   obs .addEventListener('change', guardar);
+  obs .addEventListener('blur',   guardar);
 }
 
 function fallo(t){
