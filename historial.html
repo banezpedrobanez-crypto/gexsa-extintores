@@ -117,15 +117,19 @@ function pintar(d){
   }
   var h = '<div class="tl">';
   d.items.forEach(function(it){
-    var baja = String(it.estado).toUpperCase() === 'BAJA' || /BAJA/i.test(it.atencion);
-    /* 1) La atencion (con su estado) */
-    h += '<div class="it' + (baja ? ' baja' : '') + '"><div class="fila"><div>'
-       +   '<div class="f">' + esc(it.fecha) + '</div>'
-       +   '<div class="a">' + esc(it.atencion) + '</div>'
-       + '</div>'
-       + (it.estado ? '<span class="pill ' + claseEstado(it.estado) + '">' + esc(it.estado) + '</span>' : '')
-       + '</div></div>';
-    /* 2) Cada cosa que se hizo, con su propia bolita */
+    /* Cada ATENCION y cada DETALLE con su propia bolita (aunque vengan juntos) */
+    var atenciones = partesDetalle(it.atencion);
+    if (!atenciones.length) atenciones = [''];
+    atenciones.forEach(function(at, i){
+      var baja = /BAJA/i.test(at) || (i === 0 && String(it.estado).toUpperCase() === 'BAJA');
+      h += '<div class="it' + (baja ? ' baja' : '') + '"><div class="fila"><div>'
+         +   '<div class="f">' + esc(it.fecha) + '</div>'
+         +   '<div class="a">' + esc(at) + '</div>'
+         + '</div>'
+         /* el estado va una sola vez, en la primera bolita de ese dia */
+         + (i === 0 && it.estado ? '<span class="pill ' + claseEstado(it.estado) + '">' + esc(it.estado) + '</span>' : '')
+         + '</div></div>';
+    });
     partesDetalle(it.detalle).forEach(function(x){
       h += '<div class="it"><div class="f">' + esc(it.fecha) + '</div><div class="a">' + esc(x) + '</div></div>';
     });
